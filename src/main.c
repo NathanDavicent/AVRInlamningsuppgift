@@ -1,10 +1,16 @@
-#include <stdio.h>
+#define F_CPU 16000000UL
+
+#include <avr/io.h>
+#include <util/delay.h>
 #include <stdlib.h>
-#include <time.h>
+#include <stdint.h>
+#include "lcd.h"
+
+volatile uint32_t g_seconds = 0;
 
 typedef struct {
     const char *name;
-    int weight;
+    uint16_t weight;
 } Customer;
 
 Customer customers[] = {
@@ -15,20 +21,20 @@ Customer customers[] = {
     {"IOT Reklambyra", 1000}
 };
 
-int customer_count = sizeof(customers) / sizeof(customers[0]);
+#define CUSTOMER_COUNT (sizeof(customers) / sizeof(customers[0]))
 
 int pick_customer(int last_index) {
-    int total_weight = 0;
+    uint16_t total_weight = 0;
 
-    for (int i = 0; i < customer_count; i++) {
+    for (uint8_t i = 0; i < CUSTOMER_COUNT; i++) {
         if (i != last_index) {
             total_weight += customers[i].weight;
         }
     }
 
-    int r = rand() % total_weight;
+    uint16_t r = rand() % total_weight;
 
-    for (int i = 0; i < customer_count; i++) {
+    for (uint8_t i = 0; i < CUSTOMER_COUNT; i++) {
         if (i == last_index) {
             continue;
         }
@@ -43,26 +49,25 @@ int pick_customer(int last_index) {
     return -1;
 }
 
-const char *pick_message(int customer_index) {
+const char *pick_message(uint8_t customer_index) {
     switch (customer_index) {
         case 0: {
-            int r = rand() % 3;
+            uint8_t r = rand() % 3;
             if (r == 0) return "Kop bil hos Harry [SCROLL]";
             if (r == 1) return "En god bilaffar (for Harry!) [TEXT]";
             return "Hederlige Harrys Bilar [BLINK]";
         }
 
         case 1: {
-            int r = rand() % 2;
+            uint8_t r = rand() % 2;
             if (r == 0) return "Kop paj hos Farmor Anka [SCROLL]";
             return "Skynda innan Marten atit alla pajer [TEXT]";
         }
 
         case 2: {
-            time_t now = time(NULL);
-            struct tm *t = localtime(&now);
+            uint32_t minutes = g_seconds / 60;
 
-            if (t->tm_min % 2 == 0) {
+            if ((minutes % 2) == 0) {
                 return "Lat Petter bygga at dig [SCROLL]";
             } else {
                 return "Bygga svart? Ring Petter [TEXT]";
@@ -70,7 +75,7 @@ const char *pick_message(int customer_index) {
         }
 
         case 3: {
-            int r = rand() % 2;
+            uint8_t r = rand() % 2;
             if (r == 0) return "Mysterier? Ring Langben [TEXT]";
             return "Langben fixar biffen [TEXT]";
         }
@@ -83,23 +88,33 @@ const char *pick_message(int customer_index) {
 }
 
 void display_ad(const char *customer_name, const char *message) {
-    printf("Kund: %s\n", customer_name);
-    printf("Meddelande: %s\n", message);
-    printf("-------------------------\n");
+    lcd_clear();
+    _delay_ms(50);
+
+    lcd_set_cursor(0, 0);
+    lcd_puts(customer_name);
+
+    lcd_set_cursor(1, 0);
+    lcd_puts(message);
 }
 
-
 int main(void){
+    lcd_init();
 
-    srand((unsigned int)time(NULL));
+    srand(1234);
 
     int last_customer = -1;
 
-    for (int i = 0; i < 15; i++) {
+    while (1) {
         int current = pick_customer(last_customer);
         const char *message = pick_message(current);
 
         display_ad(customers[current].name, message);
+
+        for (uint8_t i = 0; i < 20; i++){
+            _delay_ms(1000);
+            g_seconds++;
+        }
         last_customer = current;
     }
 
