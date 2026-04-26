@@ -25,3 +25,31 @@ void display_ad(const char *customer_name, const char *message) {
         }
     }
 }
+
+int pick_customer(int last_index) {
+    uint16_t total_weight = 0;
+
+    // Räkna total vikt utan senaste kunden
+    for (uint8_t i = 0; i < CUSTOMER_COUNT; i++) {
+        if (i != last_index) {
+            total_weight += customers[i].weight;
+        }
+    }
+
+    uint16_t r = rand() % total_weight;
+
+    // Välj kund utifrån slumpvärdet
+    for (uint8_t i = 0; i < CUSTOMER_COUNT; i++) {
+        if (i == last_index) {
+            continue;
+        }
+
+        if (r < customers[i].weight) {
+            return i;
+        }
+
+        r -= customers[i].weight;
+    }
+
+    return -1;
+}

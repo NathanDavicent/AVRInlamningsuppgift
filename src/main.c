@@ -20,8 +20,8 @@ typedef struct {
 
 // Kunder och deras vikt
 Customer customers[] = {
-    {"Harry", 5000},
-    {"Farmor Anka", 3000},
+    {"  Harrys Bilar", 5000},
+    {"Kop hos Farmor Anka ", 3000},
     {"Svarte Petter", 1500},
     {"Langben", 4000},
     {"IOT Reklambyra", 1000}
@@ -36,16 +36,20 @@ int pick_customer(int last_index) {
 
     // Räkna total vikt utan senaste kunden
     for (uint8_t i = 0; i < CUSTOMER_COUNT; i++) {
-        if (i != last_index) {
+        if ((int) i != last_index) {
             total_weight += customers[i].weight;
         }
+    }
+
+    if (total_weight == 0) {
+        return 0;
     }
 
     uint16_t r = rand() % total_weight;
 
     // Välj kund utifrån slumpvärdet
     for (uint8_t i = 0; i < CUSTOMER_COUNT; i++) {
-        if (i == last_index) {
+        if ((int) i == last_index) {
             continue;
         }
 
@@ -56,7 +60,7 @@ int pick_customer(int last_index) {
         r -= customers[i].weight;
     }
 
-    return -1;
+    return 0;
 }
 
 // Väljer meddelande för vald kund
@@ -72,7 +76,7 @@ const char *pick_message(uint8_t customer_index) {
         case 1: {
             uint8_t r = rand() % 2;
             if (r == 0) return "Kop paj hos F";
-            return "Skynda, paj slut";
+            return "Kop paj hos Farmor Anka  ";
         }
 
         case 2: {
@@ -108,25 +112,34 @@ void update_blink(){
 }
 
 void render_message(const char *message){
-    char buffer[17];
+    char buffer[21];
     int len = strlen(message);
 
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < 20; i++) {
         buffer[i] = message[(scroll + i) % len];
     }
-    buffer[16] = '\0';
+    buffer[20] = '\0';
 
     lcd_set_cursor(0, 1);
     lcd_puts(buffer);
 
 }
 
+void render_blink(const char *text){
+    lcd_set_cursor(0, 0);
+    
+    if (blink) {
+        lcd_puts(text);
+    } else {
+        lcd_puts("                    ");
+    }
+}
+
 // Visar kund och meddelande på LCD
 void display_ad(const char *customer_name, const char *message, uint8_t seconds) {
     lcd_clear();
 
-    lcd_set_cursor(0, 0);
-    lcd_puts(customer_name);
+
 
     scroll = 0;
     blink = 1;
@@ -135,9 +148,11 @@ void display_ad(const char *customer_name, const char *message, uint8_t seconds)
 
     for (uint16_t tick = 0; tick < seconds * 10; tick++) {
         if (tick > 0 && tick % 5 == 0) {
+            update_blink();
         }
         update_scroll(len);
 
+        render_blink(customer_name);
         render_message(message);
 
         _delay_ms(250);
@@ -148,7 +163,7 @@ void display_ad(const char *customer_name, const char *message, uint8_t seconds)
 
 int main(void){
     lcd_init();  // Starta LCD
-    srand(1234); // Startvärde för slump
+    srand(TCNT0); // Startvärde för slump
 
     int last_customer = -1;
 
