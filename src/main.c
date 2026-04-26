@@ -9,6 +9,8 @@
 #include <string.h>
 
 volatile uint32_t g_seconds = 0;   // Håller koll på sekunder
+uint8_t scroll = 0;
+uint8_t blink = 1;
 
 // Kund med namn och vikt
 typedef struct {
@@ -62,8 +64,8 @@ const char *pick_message(uint8_t customer_index) {
     switch (customer_index) {
         case 0: {
             uint8_t r = rand() % 3;
-            if (r == 0) return "Kop bil hos H, God bilaffar";
-            if (r == 1) return "God bilaffar";
+            if (r == 0) return "Kop bil hos Harry. En god bilaffar (for Harry!)  ";
+            if (r == 1) return "God bilaffar, Hederlige Harrys Bilar    ";
             return "Harrys Bilar";
         }
 
@@ -97,39 +99,51 @@ const char *pick_message(uint8_t customer_index) {
 }
 
 
+void update_scroll(int len){
+    scroll = (scroll + 1) % len;
+}
 
+void update_blink(){
+    blink = !blink;
+}
 
-
-// Visar kund och meddelande på LCD
-void display_ad(const char *customer_name, const char *message) {
-    uint8_t seconds;
+void render_message(const char *message){
     char buffer[17];
     int len = strlen(message);
 
+    for (int i = 0; i < 16; i++) {
+        buffer[i] = message[(scroll + i) % len];
+    }
+    buffer[16] = '\0';
+
+    lcd_set_cursor(0, 1);
+    lcd_puts(buffer);
+
+}
+
+// Visar kund och meddelande på LCD
+void display_ad(const char *customer_name, const char *message, uint8_t seconds) {
     lcd_clear();
+
     lcd_set_cursor(0, 0);
     lcd_puts(customer_name);
 
+    scroll = 0;
+    blink = 1;
 
-    for (int offset = 0; offset < len; offset++) {
-        for (int i = 0; i < 16; i++) {
-            buffer[i] = message[(offset + i) % len];
+    int len = strlen(message);
+
+    for (uint16_t tick = 0; tick < seconds * 10; tick++) {
+        if (tick > 0 && tick % 5 == 0) {
         }
+        update_scroll(len);
 
-        buffer[16] = '\0';
+        render_message(message);
 
-        // Visar txt
-        lcd_set_cursor(0, 0);
-        lcd_puts(buffer);
-        _delay_ms(500);
-
-        // dölj txt
-        lcd_set_cursor(0, 0);
-        lcd_puts("                ");
-        _delay_ms(500);
-
-        g_seconds++;
+        _delay_ms(250);
     }
+
+    g_seconds += seconds;
 }
 
 int main(void){
@@ -142,13 +156,8 @@ int main(void){
         int current = pick_customer(last_customer);
         const char *message = pick_message(current);
 
-        display_ad(customers[current].name, message);
+        display_ad(customers[current].name, message, 20);
 
-        // Vänta 20 sekunder
-        for (uint8_t i = 0; i < 20; i++){
-            _delay_ms(1000);
-            g_seconds++;
-        }
         last_customer = current;
     }
 
