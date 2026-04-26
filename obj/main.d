@@ -6,4 +6,4 @@ obj/main.o: src/main.c C:/avr/avr/include/avr/io.h \
  C:/avr/avr/include/avr/fuse.h C:/avr/avr/include/avr/lock.h \
  C:/avr/avr/include/util/delay.h C:/avr/avr/include/util/delay_basic.h \
  C:/avr/avr/include/stdlib.h C:/avr/lib/gcc/avr/15.2.0/include/stddef.h \
- src/lcd.h
+ src/lcd.h C:/avr/avr/include/string.h

@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include "lcd.h"
 
+#include <string.h>
+
 volatile uint32_t g_seconds = 0;   // Håller koll på sekunder
 
 // Kund med namn och vikt
@@ -60,7 +62,7 @@ const char *pick_message(uint8_t customer_index) {
     switch (customer_index) {
         case 0: {
             uint8_t r = rand() % 3;
-            if (r == 0) return "Kop bil hos H";
+            if (r == 0) return "Kop bil hos H, God bilaffar";
             if (r == 1) return "God bilaffar";
             return "Harrys Bilar";
         }
@@ -94,25 +96,40 @@ const char *pick_message(uint8_t customer_index) {
     return "Okant meddelande";
 }
 
+
+
+
+
 // Visar kund och meddelande på LCD
 void display_ad(const char *customer_name, const char *message) {
+    uint8_t seconds;
+    char buffer[17];
+    int len = strlen(message);
+
     lcd_clear();
-    _delay_ms(50);
-
-    // Rensa båda raderna
     lcd_set_cursor(0, 0);
-    lcd_puts("                "); // 16 spaces
-
-    lcd_set_cursor(0, 0);
-    lcd_puts("                "); // 16 spaces
-
-    // Skriv kundnamn på rad 1
-    lcd_set_cursor(1, 0);
     lcd_puts(customer_name);
 
-    // Skriv meddelande på rad 2
-    lcd_set_cursor(1, 0);
-    lcd_puts(message);
+
+    for (int offset = 0; offset < len; offset++) {
+        for (int i = 0; i < 16; i++) {
+            buffer[i] = message[(offset + i) % len];
+        }
+
+        buffer[16] = '\0';
+
+        // Visar txt
+        lcd_set_cursor(0, 0);
+        lcd_puts(buffer);
+        _delay_ms(500);
+
+        // dölj txt
+        lcd_set_cursor(0, 0);
+        lcd_puts("                ");
+        _delay_ms(500);
+
+        g_seconds++;
+    }
 }
 
 int main(void){
