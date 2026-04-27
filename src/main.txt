@@ -53,3 +53,25 @@ int pick_customer(int last_index) {
 
     return -1;
 }
+
+void render_text_message(const char *message){
+    clear_line(1);
+    lcd_set_cursor(0, 1);
+    lcd_puts(message);
+}
+
+void render_blink_message(const char *message){
+    lcd_set_cursor(0, 1);
+    lcd_puts("                    ");
+    
+    if (blink) {
+        lcd_set_cursor(0, 1);
+        lcd_puts(message);
+    }
+}
+
+void render_customer_name(const char *name){
+    clear_line(0);
+    lcd_set_cursor(0, 0);
+    lcd_puts(name);
+}
